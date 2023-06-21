@@ -38,7 +38,7 @@ namespace RideRate.Services.Account
                     {
                         StatusCode = HttpStatusCode.BadRequest,
                         Data = null,
-                        Message = $"New password and confirm password dosent match",
+                        Message = $"New password and confirm password dosent match ",
                         Success = false
                     };
                 }
