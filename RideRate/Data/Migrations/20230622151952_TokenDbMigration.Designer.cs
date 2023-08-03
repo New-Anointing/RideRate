@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using RideRate.Data;
 
@@ -11,9 +12,11 @@ using RideRate.Data;
 namespace RideRate.Migrations
 {
     [DbContext(typeof(ApiDbcontext))]
-    partial class ApiDbcontextModelSnapshot : ModelSnapshot
+    [Migration("20230622151952_TokenDbMigration")]
+    partial class TokenDbMigration
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -331,9 +334,6 @@ namespace RideRate.Migrations
                     b.Property<DateTime>("DateUpdated")
                         .HasColumnType("datetime2");
 
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
@@ -343,7 +343,7 @@ namespace RideRate.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("TokenFamily");
+                    b.ToTable("RefreshToken");
                 });
 
             modelBuilder.Entity("RideRate.Models.ApplicationUser", b =>

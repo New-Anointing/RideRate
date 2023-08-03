@@ -14,5 +14,6 @@ namespace RideRate.Data
         public DbSet<ApplicationUser> ApplicationUser { get; set; }
         public DbSet<Location> Location { get; set; }
         public DbSet<Rate> Rate { get; set; }
+        public DbSet<TokenFamily> TokenFamily { get; set; }
     }
 }

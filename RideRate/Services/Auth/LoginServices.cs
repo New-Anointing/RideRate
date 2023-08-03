@@ -21,6 +21,7 @@ namespace RideRate.Services.Auth
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IHttpContextAccessor _iHttpContextAccessor;
         private readonly ApiDbcontext _context;
+        private TokenFamily tokenFamily = new();
         public LoginServices
         (
             IConfiguration configuration,
@@ -46,6 +47,11 @@ namespace RideRate.Services.Auth
                     var token = CreateToken(userExist).Result;
                     var refreshToken = GenerateRefreshToken();
                     SetRefreshToken(refreshToken, userExist);
+                    tokenFamily.AppUserId = userExist.AppUserId;
+                    tokenFamily.Token = refreshToken.Token;
+                    tokenFamily.IsActive = true;
+                    await _context.TokenFamily.AddAsync(tokenFamily);
+                    await _context.SaveChangesAsync();
                     return new GenericResponse<string>
                     {
                         StatusCode = HttpStatusCode.OK,
@@ -82,18 +88,45 @@ namespace RideRate.Services.Auth
 
                 var tokenUser = await _context.ApplicationUser.FirstOrDefaultAsync(u=> u.RefershToken == refreshToken);
 
+
                 if (tokenUser is null)
                 {
                     return new GenericResponse<string>
                     {
                         StatusCode = HttpStatusCode.Unauthorized,
                         Data = null,
-                        Message = "Invalid Refresh Token",
+                        Message = "Unauthorised access",
                         Success = false
                     };
                 }
-                else if(tokenUser.TokenExpires < DateTime.Now)
+                var isInFamily = await _context.TokenFamily.Where(u => u.AppUserId == tokenUser.AppUserId).FirstOrDefaultAsync(u => u.Token == tokenUser.RefershToken);
+                if (isInFamily is null)
                 {
+                    isInFamily.IsActive = false;
+                    tokenUser.TokenExpires = new DateTime(1999, 01, 01);
+                    return new GenericResponse<string>
+                    {
+                        StatusCode = HttpStatusCode.Unauthorized,
+                        Data = null,
+                        Message = "Unauthorised access",
+                        Success = false
+                    };
+                }
+                if(isInFamily.IsActive is false)
+                {
+                    isInFamily.IsActive = false;
+                    tokenUser.TokenExpires = new DateTime(1999, 01, 01);
+                    return new GenericResponse<string>
+                    {
+                        StatusCode = HttpStatusCode.Unauthorized,
+                        Data = null,
+                        Message = "Unauthorised access",
+                        Success = false
+                    };
+                }
+                if(tokenUser.TokenExpires < DateTime.Now)
+                {
+                    isInFamily.IsActive = false;
                     return new GenericResponse<string>
                     {
                         StatusCode = HttpStatusCode.Unauthorized,
@@ -105,6 +138,7 @@ namespace RideRate.Services.Auth
 
                 string token = CreateToken(tokenUser).Result;
                 var newRefreshToken = GenerateRefreshToken();
+                isInFamily.IsActive = false;
                 SetRefreshToken(newRefreshToken, tokenUser);
 
                 return new GenericResponse<string>
@@ -139,7 +173,7 @@ namespace RideRate.Services.Auth
             };
             return refreshToken; 
         }
-        private async void SetRefreshToken(RefreshToken newRefreshToken, ApplicationUser user)
+        private async Task SetRefreshToken(RefreshToken newRefreshToken, ApplicationUser user)
         {
             var cookieOptions = new CookieOptions
             {
