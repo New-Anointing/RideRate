@@ -19,5 +19,8 @@ namespace RideRate.Models
         public string RefershToken { get; set; } = string.Empty;
         public DateTime TokenCreated { get; set; }
         public DateTime TokenExpires { get; set; }
+        public int VerificationToken { get; set; }
+        public bool Verified { get; set; } = false;
+        public DateTime VerifiedAt { get; set; }
     }
 }

@@ -24,6 +24,11 @@ namespace RideRate.Services.Registration
             _userManager = userManager;
         }
 
+        private int CreateCode()
+        {
+            Random code = new Random();
+            return code.Next(6);
+        }
 
         public async Task<GenericResponse<ApplicationUser>> UserRegistration(UserDTO request)
         {
@@ -42,8 +47,11 @@ namespace RideRate.Services.Registration
                     user.AppUserId = Guid.NewGuid();
                     user.Role = request.Role.ToString();
                     user.Gender = request.Gender.ToString();
+                    //CREATE VERIFICATION CODE
+                    user.VerificationToken = CreateCode();
 
                     var result = await _userManager.CreateAsync(user, request.Password);
+
                     if (!result.Succeeded)
                     {
                         return new GenericResponse<ApplicationUser>

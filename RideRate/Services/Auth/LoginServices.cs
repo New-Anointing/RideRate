@@ -41,8 +41,18 @@ namespace RideRate.Services.Auth
             try
             {
                 var userExist = await _userManager.FindByEmailAsync(request.EmailAddress);
+                if(userExist.Verified == false)
+                {
+                    return new GenericResponse<string>
+                    {
+                        StatusCode = HttpStatusCode.Unauthorized,
+                        Data = null,
+                        Message = "User is not verified",
+                        Success = false
+                    };
+                }
                 var passwordCheck = await _userManager.CheckPasswordAsync(userExist, request.Password);
-                if (userExist != null && passwordCheck)
+                if (userExist != null && passwordCheck && userExist.Verified)
                 {
                     var token = CreateToken(userExist).Result;
                     var refreshToken = GenerateRefreshToken();
@@ -102,8 +112,6 @@ namespace RideRate.Services.Auth
                 var isInFamily = await _context.TokenFamily.Where(u => u.AppUserId == tokenUser.AppUserId).FirstOrDefaultAsync(u => u.Token == tokenUser.RefershToken);
                 if (isInFamily is null)
                 {
-                    isInFamily.IsActive = false;
-                    tokenUser.TokenExpires = new DateTime(1999, 01, 01);
                     return new GenericResponse<string>
                     {
                         StatusCode = HttpStatusCode.Unauthorized,
@@ -213,6 +221,70 @@ namespace RideRate.Services.Auth
                 );
             var jwt = new JwtSecurityTokenHandler().WriteToken(token);
             return jwt;
+        }
+
+        public async Task<GenericResponse<string>> VerifyAccount(VerifiedDto request)
+        {
+            try
+            {
+                var user = await _userManager.FindByEmailAsync(request.email);
+                if (user == null)
+                {
+                    return new GenericResponse<string>
+                    {
+                        StatusCode = HttpStatusCode.NotFound,
+                        Data = null,
+                        Message = "user does not exist",
+                        Success = false
+                    };
+
+                }
+                else if (user.Verified)
+                {
+                    return new GenericResponse<string>
+                    {
+                        StatusCode = HttpStatusCode.BadRequest,
+                        Data = null,
+                        Message = "user has been verified",
+                        Success = false
+                    };
+                }
+                else if(user.VerificationToken == request.Code)
+                {
+                    user.Verified = true;
+                    user.VerifiedAt = DateTime.Now;
+                    _context.Update(user);
+                    await _context.SaveChangesAsync();
+
+                    return new GenericResponse<string>
+                    {
+                        StatusCode = HttpStatusCode.OK,
+                        Data = null,
+                        Message = "user has been successfully verified",
+                        Success = true
+                    };
+                }
+
+                return new GenericResponse<string>
+                {
+                    StatusCode = HttpStatusCode.BadRequest,
+                    Data= null,
+                    Message = "incorrect validation code",
+                    Success = false
+                };
+
+
+            }
+            catch(Exception ex)
+            {
+                return new GenericResponse<string>
+                {
+                    StatusCode = HttpStatusCode.InternalServerError,
+                    Data = null,
+                    Message = $"An error occured {ex.Message}",
+                    Success = false
+                };
+            }
         }
     }
 }
