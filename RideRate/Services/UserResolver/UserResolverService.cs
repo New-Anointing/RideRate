@@ -2,6 +2,7 @@
 using RideRate.Data;
 using RideRate.Helpers;
 using RideRate.Models;
+using System;
 using System.Net;
 using System.Security.Claims;
 
@@ -34,6 +35,18 @@ namespace RideRate.Services.UserResolver
             }
 
             return claim;
+        }
+
+        public int[] CreateCode()
+        {
+            Random code = new Random();
+            int[] randomIntegers = new int[6];
+            for (int i = 0; i < randomIntegers.Length; i++)
+            {
+                // Generate a random integer and store it in the array
+                randomIntegers[i] = code.Next(0, 9);
+            }
+            return randomIntegers;
         }
 
         //Catch repoonses for errors for Location

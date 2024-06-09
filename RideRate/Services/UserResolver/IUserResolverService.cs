@@ -12,5 +12,6 @@ namespace RideRate.Services.UserResolver
         public GenericResponse<IEnumerable<Location>> LocationListGenericResponse();
         public GenericResponse<Rate> RateGenericResponse();
         public GenericResponse<IEnumerable<Rate>> RateListGenericResponse();
+        public int[] CreateCode();
     }
 }

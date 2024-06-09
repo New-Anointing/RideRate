@@ -15,5 +15,12 @@ namespace RideRate.Data
         public DbSet<Location> Location { get; set; }
         public DbSet<Rate> Rate { get; set; }
         public DbSet<TokenFamily> TokenFamily { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder builder)
+        {
+            base.OnModelCreating(builder);
+            builder.Entity<ApplicationUser>()
+                .Ignore(e => e.VerificationToken);
+        }
     }
 }

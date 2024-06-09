@@ -4,6 +4,7 @@ using RideRate.Data;
 using RideRate.DTOModels;
 using RideRate.Helpers;
 using RideRate.Models;
+using RideRate.Services.UserResolver;
 using RideRate.Utilities;
 using System.Net;
 
@@ -14,21 +15,20 @@ namespace RideRate.Services.Registration
         private readonly ApiDbcontext _context;
         private readonly UserManager<ApplicationUser> _userManager;
         private static ApplicationUser user = new();
+        private readonly IUserResolverService _userResolverService;
         public RegistrationService
         (
             ApiDbcontext context,
-            UserManager<ApplicationUser> userManager
+            UserManager<ApplicationUser> userManager,
+            IUserResolverService userResolverService
         )
         {
             _context = context;
             _userManager = userManager;
+            _userResolverService = userResolverService;
         }
 
-        private int CreateCode()
-        {
-            Random code = new Random();
-            return code.Next(6);
-        }
+        private int[] CreateCode => _userResolverService.CreateCode();
 
         public async Task<GenericResponse<ApplicationUser>> UserRegistration(UserDTO request)
         {
@@ -48,7 +48,7 @@ namespace RideRate.Services.Registration
                     user.Role = request.Role.ToString();
                     user.Gender = request.Gender.ToString();
                     //CREATE VERIFICATION CODE
-                    user.VerificationToken = CreateCode();
+                    user.VerificationToken = CreateCode;
 
                     var result = await _userManager.CreateAsync(user, request.Password);
 

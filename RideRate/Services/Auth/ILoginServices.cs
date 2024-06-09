@@ -10,5 +10,6 @@ namespace RideRate.Services.Auth
         Task<GenericResponse<string>> Login(LoginDTO request);
         Task<GenericResponse<string>> VerifyAccount(VerifiedDto request);
         Task<GenericResponse<string>> RefreshToken();
+        Task<GenericResponse<int[]>> RequestNewVerificationCode(string request);
     }
 }

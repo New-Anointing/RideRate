@@ -46,5 +46,14 @@ namespace RideRate.Controllers
             var result = await _iloginServices.VerifyAccount(request);
             return StatusCode((int)result.StatusCode, result);
         }
+        [HttpGet("Get-Verification-Token")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GenericResponse<int[]>))]
+        [ProducesResponseType(StatusCodes.Status404NotFound, Type = typeof(GenericResponse<int[]>))]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError, Type = typeof(GenericResponse<int[]>))]
+        public async Task<ActionResult> RequestVerificationToken(string request)
+        {
+            var result = await _iloginServices.RequestNewVerificationCode(request);
+            return StatusCode((int)result.StatusCode, result);
+        }
     }
 }

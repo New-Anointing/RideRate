@@ -12,30 +12,34 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using RideRate.Data;
 using Microsoft.EntityFrameworkCore;
+using RideRate.Services.UserResolver;
 
 namespace RideRate.Services.Auth
 {
     public class LoginServices : ILoginServices
     {
-        private IConfiguration _configuration;
+        private readonly IConfiguration _configuration;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IHttpContextAccessor _iHttpContextAccessor;
         private readonly ApiDbcontext _context;
         private TokenFamily tokenFamily = new();
+        private readonly IUserResolverService _userResolverService;
         public LoginServices
         (
             IConfiguration configuration,
             UserManager<ApplicationUser> userManager,
             IHttpContextAccessor iHttpContextAccessor,
-            ApiDbcontext context   
+            ApiDbcontext context,
+            IUserResolverService userResolverService
         )
         {
             _configuration= configuration;
             _userManager= userManager;
             _iHttpContextAccessor= iHttpContextAccessor;
             _context= context;
-
+            _userResolverService = userResolverService;
         }
+        private int[] code => _userResolverService.CreateCode();
         public async Task<GenericResponse<string>> Login(LoginDTO request)
         {
             try
@@ -249,7 +253,7 @@ namespace RideRate.Services.Auth
                         Success = false
                     };
                 }
-                else if(user.VerificationToken == request.Code)
+                else if (request.Code.SequenceEqual(user.VerificationToken))
                 {
                     user.Verified = true;
                     user.VerifiedAt = DateTime.Now;
@@ -281,6 +285,42 @@ namespace RideRate.Services.Auth
                 {
                     StatusCode = HttpStatusCode.InternalServerError,
                     Data = null,
+                    Message = $"An error occured {ex.Message}",
+                    Success = false
+                };
+            }
+        }
+
+        public async Task<GenericResponse<int[]>> RequestNewVerificationCode(string request)
+        {
+            try
+            {
+                var user = await _userManager.FindByEmailAsync(request);
+                if (user is not null)
+                {
+                    var newCode = code;
+                    user.VerificationToken = newCode;
+                    await _context.SaveChangesAsync();
+                    return new GenericResponse<int[]>
+                    {
+                        StatusCode = HttpStatusCode.OK,
+                        Data = newCode,
+                        Message = "Verification code sent successfully",
+                        Success = true
+                    };
+                }
+                return new GenericResponse<int[]>
+                {
+                    StatusCode = HttpStatusCode.NotFound,
+                    Message = "User does not exist",
+                    Success = false
+                };
+            }
+            catch(Exception ex)
+            {
+                return new GenericResponse<int[]>
+                {
+                    StatusCode = HttpStatusCode.InternalServerError,
                     Message = $"An error occured {ex.Message}",
                     Success = false
                 };
